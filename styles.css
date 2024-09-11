@@ -1,0 +1,36 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #70c5ce;
+  font-family: 'Arial', sans-serif;
+}
+
+#gameContainer {
+  position: relative;
+}
+
+#gameCanvas {
+  background-image: url('background.png'); /* Imagem de fundo */
+  background-size: cover;
+  border: 2px solid #000;
+}
+
+#score, #highscore {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 24px;
+  color: #fff;
+}
+
+#highscore {
+  top: 40px;
+}
