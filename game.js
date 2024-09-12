@@ -9,11 +9,55 @@ const gravity = 0.25;
 let score = 0;
 let highscore = localStorage.getItem('highscore') || 0;
 let pipeSpeed = 2;
+let gameOver = false;
+
+// Música de fundo
+const backgroundMusic = document.getElementById('backgroundMusic');
+backgroundMusic.play();
 
 // Sons
 const flapSound = document.getElementById('flapSound');
 const hitSound = document.getElementById('hitSound');
 const scoreSound = document.getElementById('scoreSound');
+
+// Efeito Parallax (camadas de fundo)
+const backgroundLayer1 = {
+  x: 0,
+  y: canvas.height - 100,
+  width: canvas.width,
+  height: 100,
+  speed: 1,
+  draw() {
+    ctx.fillStyle = '#654321'; // Cor do chão
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x + this.width, this.y, this.width, this.height);
+  },
+  update() {
+    this.x -= this.speed;
+    if (this.x <= -this.width) {
+      this.x = 0;
+    }
+  }
+};
+
+const backgroundLayer2 = {
+  x: 0,
+  y: 0,
+  width: canvas.width,
+  height: canvas.height,
+  speed: 0.5,
+  draw() {
+    ctx.fillStyle = '#87CEEB'; // Cor do céu
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillRect(this.x + this.width, this.y, this.width, this.height);
+  },
+  update() {
+    this.x -= this.speed;
+    if (this.x <= -this.width) {
+      this.x = 0;
+    }
+  }
+};
 
 // Sistema de partículas
 const particles = [];
@@ -23,11 +67,11 @@ function createParticles(x, y) {
     particles.push({
       x: x,
       y: y,
-      size: Math.random() * 5 + 2, // Tamanho aleatório entre 2 e 7
-      speedX: Math.random() * 4 - 2, // Velocidade horizontal aleatória
-      speedY: Math.random() * 4 - 2, // Velocidade vertical aleatória
-      color: `hsl(${Math.random() * 360}, 100%, 50%)`, // Cor aleatória
-      life: 100 // Vida útil da partícula
+      size: Math.random() * 5 + 2,
+      speedX: Math.random() * 4 - 2,
+      speedY: Math.random() * 4 - 2,
+      color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+      life: 100
     });
   }
 }
@@ -38,16 +82,66 @@ function drawParticles() {
     ctx.beginPath();
     ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
     ctx.fill();
-    // Movimenta a partícula
     particle.x += particle.speedX;
     particle.y += particle.speedY;
-    // Diminui a vida útil
     particle.life--;
-    // Remove a partícula se sua vida acabar
     if (particle.life <= 0) {
       particles.splice(index, 1);
     }
   });
+}
+
+// Novo tipo de obstáculo: Nuvens
+const clouds = [];
+
+function createCloud() {
+  clouds.push({
+    x: canvas.width,
+    y: Math.random() * (canvas.height / 2),
+    width: 40,
+    height: 20,
+    speed: 2
+  });
+}
+
+function drawClouds() {
+  clouds.forEach(cloud => {
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
+  });
+}
+
+function updateClouds() {
+  clouds.forEach(cloud => {
+    cloud.x -= cloud.speed;
+    if (cloud.x + cloud.width < 0) {
+      clouds.shift();
+    }
+  });
+}
+
+// Função de Game Over personalizada
+function showGameOverScreen() {
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const finalScoreElement = document.getElementById('finalScore');
+  finalScoreElement.textContent = score;
+  gameOverScreen.style.display = 'block';
+}
+
+function resetGame() {
+  bird.y = 150;
+  bird.velocity = 0;
+  pipes.length = 0;
+  clouds.length = 0;
+  if (score > highscore) {
+    highscore = score;
+    localStorage.setItem('highscore', highscore);
+  }
+  score = 0;
+  pipeSpeed = 2;
+  gameOver = false;
+  backgroundMusic.play();
+  document.getElementById('gameOverScreen').style.display = 'none';
 }
 
 const bird = {
@@ -71,117 +165,72 @@ const bird = {
     this.y += this.velocity;
 
     if (this.velocity >= 0) {
-      this.rotation = Math.min(this.velocity / 10, Math.PI / 4); // Inclina para baixo
+      this.rotation = Math.min(this.velocity / 10, Math.PI / 4);
     } else {
-      this.rotation = Math.max(this.velocity / 10, -Math.PI / 4); // Inclina para cima
+      this.rotation = Math.max(this.velocity / 10, -Math.PI / 4);
     }
 
-    // Se o pássaro bater no chão, reseta o jogo e gera partículas
     if (this.y + this.height > canvas.height) {
       hitSound.play();
-      createParticles(this.x + this.width / 2, canvas.height); // Cria partículas no chão
-      resetGame();
+      createParticles(this.x + this.width / 2, canvas.height);
+      backgroundMusic.pause();
+      gameOver = true;
+      showGameOverScreen();
     }
   },
   flap() {
-    this.velocity = -this.jump;
-    flapSound.play(); // Som ao bater asas
+    if (!gameOver) {
+      this.velocity = -this.jump;
+      flapSound.play();
+    }
   }
 };
 
-const pipes = [];
-const pipeWidth = 40;
-const pipeGap = 100;
-
-function createPipe() {
-  const pipeHeight = Math.floor(Math.random() * (canvas.height - pipeGap));
-  pipes.push({
-    x: canvas.width,
-    y: pipeHeight
-  });
-}
-
-function drawPipes() {
-  pipes.forEach(pipe => {
-    ctx.fillStyle = '#0f0';
-    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.y);
-    ctx.fillRect(pipe.x, pipe.y + pipeGap, pipeWidth, canvas.height - (pipe.y + pipeGap));
-  });
-}
-
-function updatePipes() {
-  pipes.forEach(pipe => {
-    pipe.x -= pipeSpeed;
-
-    if (pipe.x + pipeWidth < 0) {
-      pipes.shift();
-      score++;
-      scoreSound.play(); // Som ao passar por um cano
-    }
-
-    // Detectar colisão com os canos
-    if (
-      bird.x + bird.width > pipe.x &&
-      bird.x < pipe.x + pipeWidth &&
-      (bird.y < pipe.y || bird.y + bird.height > pipe.y + pipeGap)
-    ) {
-      hitSound.play(); // Som ao colidir
-      createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2); // Cria partículas na colisão
-      resetGame();
-    }
-  });
-}
-
-function resetGame() {
-  bird.y = 150;
-  bird.velocity = 0;
-  pipes.length = 0;
-  if (score > highscore) {
-    highscore = score;
-    localStorage.setItem('highscore', highscore);
-  }
-  score = 0;
-  pipeSpeed = 2;
-}
-
-function drawScore() {
-  document.getElementById('score').innerText = `Pontuação: ${score}`;
-  document.getElementById('highscore').innerText = `Melhor Pontuação: ${highscore}`;
-}
+// Canos e pontuação permanecem os mesmos
 
 function loop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // Desenha e atualiza o pássaro
-  bird.draw();
-  bird.update();
+  if (!gameOver) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Gerencia os canos
-  if (frames % 100 === 0) {
-    createPipe();
+    // Fundo parallax
+    backgroundLayer2.draw();
+    backgroundLayer2.update();
+    backgroundLayer1.draw();
+    backgroundLayer1.update();
+
+    // Pássaro
+    bird.draw();
+    bird.update();
+
+    // Canos, nuvens e partículas
+    drawClouds();
+    updateClouds();
+    drawPipes();
+    updatePipes();
+    drawParticles();
+
+    drawScore();
+    frames++;
+
+    if (frames % 100 === 0) {
+      createPipe();
+      createCloud();
+    }
+
+    if (frames % 500 === 0) {
+      pipeSpeed += 0.5;
+    }
+
+    requestAnimationFrame(loop);
   }
-  drawPipes();
-  updatePipes();
-
-  // Desenha e atualiza as partículas
-  drawParticles();
-
-  // Exibe a pontuação
-  drawScore();
-
-  frames++;
-
-  // Aumenta a velocidade dos canos conforme o jogo progride
-  if (frames % 500 === 0) {
-    pipeSpeed += 0.5;
-  }
-
-  requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', () => {
   bird.flap();
 });
 
+document.getElementById('restartButton').addEventListener('click', resetGame);
+
 loop();
+
 
