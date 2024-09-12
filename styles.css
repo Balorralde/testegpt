@@ -18,7 +18,8 @@ body {
 }
 
 #gameCanvas {
-  background-color: #70c5ce;
+  background-image: url('background.png'); /* Imagem de fundo */
+  background-size: cover;
   border: 2px solid #000;
 }
 
@@ -32,25 +33,5 @@ body {
 
 #highscore {
   top: 40px;
-}
-
-#gameOverScreen {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  padding: 20px;
-  border-radius: 10px;
-  color: white;
-}
-
-#restartButton {
-  padding: 10px 20px;
-  background-color: #ff0;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
 }
 

@@ -11,15 +11,12 @@
     <canvas id="gameCanvas"></canvas>
     <div id="score">Pontuação: 0</div>
     <div id="highscore">Melhor Pontuação: 0</div>
-    <div id="gameOverScreen" style="display: none;">
-      <h2>Game Over!</h2>
-      <p>Sua pontuação: <span id="finalScore"></span></p>
-      <button id="restartButton">Reiniciar</button>
-    </div>
   </div>
 
-  <!-- Música de fundo -->
-  <audio id="backgroundMusic" src="background-music.mp3" loop></audio>
+  <!-- Sons -->
+  <audio id="flapSound" src="flap.mp3"></audio>
+  <audio id="hitSound" src="hit.mp3"></audio>
+  <audio id="scoreSound" src="score.mp3"></audio>
 
   <script src="game.js"></script>
 </body>
